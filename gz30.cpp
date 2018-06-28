@@ -13,13 +13,9 @@ struct worker
 	float post_allowance;//职务津贴
 	float performance_salary;//绩效工资
 	float wages_payable;//应发工资
-	float personal_income_tax;//个人所得税
+	float tax;//个人所得税
 	float real_salary;//实发工资
-};
-struct worker zggz[NUM];
-	struct worker z;
-struct worker *p=zggz;
-
+}zggz[NUM],z;
 int read(struct worker zggz[])//读取职工工资数据函数
 {
     int n;//职工人数
@@ -46,7 +42,7 @@ int read(struct worker zggz[])//读取职工工资数据函数
 			fscanf(fp,"%f",&z.post_allowance);
 			fscanf(fp,"%f",&z.performance_salary);
 			fscanf(fp,"%f",&z.wages_payable);
-			fscanf(fp,"%f",&z.personal_income_tax);
+			fscanf(fp,"%f",&z.tax);
 			fscanf(fp,"%f",&z.real_salary);
 			zggz[n]=z;
 			n++;
@@ -80,7 +76,7 @@ void write(struct worker zggz[],int n)//保存职工工资数据函数
 					fprintf(fp,"%f",zggz[i].post_allowance);
 					fprintf(fp,"%f",zggz[i].performance_salary);
 					fprintf(fp,"%f",zggz[i].wages_payable);
-					fprintf(fp,"%f",zggz[i].personal_income_tax);
+					fprintf(fp,"%f",zggz[i].tax);
 					fprintf(fp,"%f",zggz[i].real_salary);
 				}
 	fclose(fp);
@@ -96,7 +92,7 @@ void find(struct worker zggz[],int n)//查询职工数据函数
 	//遍历结构体数组，查找有无该工号的员工，若有flag=1,反之flag=0
 	for(i=0;i<n;i++)
 	{
-		if(strcmp(zggz[i].workernumber,gonghao)==0)
+		if(strcmp(&zggz[i].workernumber,gonghao)==0)
 		{
 			flag=1;
 			break;
@@ -114,14 +110,14 @@ void find(struct worker zggz[],int n)//查询职工数据函数
 		printf("%f\t",zggz[i].post_allowance);
 		printf("%f\t",zggz[i].performance_salary);
 		printf("%f\t",zggz[i].wages_payable);
-		printf("%f\t",zggz[i].personal_income_tax);
+		printf("%f\t",zggz[i].tax);
 		printf("%f\t",zggz[i].real_salary);
 		//zggz数组中可能有多个工号一样的员工，需要继续查找，用j来标记员工的位置
 		///第二次寻找的起始位置应该从i+1的位置开始因为之前的已经找过了
 		for(j=i+1;j<n;j++)
 		{
 			//字符串与字符串不能之间相等，所以使用strcmp进行比较
-			if(strcmp(zggz[j].workernumber,gonghao)==0)
+			if(strcmp(&zggz[j].workernumber,gonghao)==0)
 			{
 				printf("%c\t",zggz[j].workernumber);
 		        printf("%c\t",zggz[j].name);
@@ -130,7 +126,7 @@ void find(struct worker zggz[],int n)//查询职工数据函数
 		        printf("%f\t",zggz[j].post_allowance);
 		        printf("%f\t",zggz[j].performance_salary);
 		        printf("%f\t",zggz[j].wages_payable);
-	          	printf("%f\t",zggz[j].personal_income_tax);
+	          	printf("%f\t",zggz[j].tax);
 	         	printf("%f\t",zggz[j].real_salary);
 			}
 		}
@@ -149,13 +145,14 @@ void list(struct worker zggz[],int n)//浏览职工工资数据函数
 	for(int i=0;i<=n;i++)
 	{
 		printf("**********\n");
+		printf("%c\t",zggz[i].workernumber);
 		printf("%c\n",zggz[i].name);
 	   	printf("%f\n",zggz[i].post_salary);
 		printf("%f\n",zggz[i].pay_wages);
 		printf("%f\n",zggz[i].post_allowance);
 	    printf("%f\n",zggz[i].performance_salary);
 		printf("%f\n",zggz[i].wages_payable);
-	    printf("%f\n",zggz[i].personal_income_tax);
+	    printf("%f\n",zggz[i].tax);
 	    printf("%f\n",zggz[i].real_salary);
 		printf("**********\n");
 
@@ -164,14 +161,14 @@ void list(struct worker zggz[],int n)//浏览职工工资数据函数
 void modify(struct worker zggz[],int n)//修改职工工资数据函数
 {
 	int flag=0;//标记是否被修改
-	char gonghao[20];
+	char gonghao[10];
 	printf("请输入要修改的职工的工号：");
 	scanf("%c",&gonghao);
 	for(int i=0;i<n;i++)
 	{
-		if(strcmp(zggz[i].workernumber,gonghao)==0)
+		if(strcmp(&zggz[i].workernumber,gonghao)==0)
 		{
-			if(zggz[i].workernumber==gonghao)
+			if(&zggz[i].workernumber==gonghao)
 			{
 				printf("修改前后的信息不能一样！\n");
 				break;
@@ -192,18 +189,41 @@ void modify(struct worker zggz[],int n)//修改职工工资数据函数
 		break;
 	}
 }
-void grsds(struct worker zggz[], int n)//计算个人所得税函数
-{
+void grsds(struct worker zggz[],int n)//计算个人所得税函数
+{  
 	FILE *fp;
-	fp=fopen("gz.dat","w");
-	if(n==0)
+	if((fp=fopen("gz.dat","a+"))==NULL)
 	{
-		printf("\n员工信息表中没有信息！/n");
-		return;
+		printf("打开文件失败");
+		exit(0);
 	}
-	else{
-		puts("");
+	while(!feof(fp))
+	{
+		for(int i=0;i<n;i++)
+		{
+		if(zggz[i].wages_payable<=0)
+		{zggz[i].tax=0;}
+	if(zggz[i].wages_payable<=500)
+	{zggz[i].tax=float(zggz[i].wages_payable*0.05);}
+	if(zggz[i].wages_payable>500 && zggz[i].wages_payable<=2000)
+	{zggz[i].tax=float(zggz[i].wages_payable*0.1);}
+	if(zggz[i].wages_payable>2000 && zggz[i].wages_payable<=5000)
+	{zggz[i].tax=float(zggz[i].wages_payable*0.15);}
+	if(zggz[i].wages_payable>5000 && zggz[i].wages_payable<=20000)
+	{zggz[i].tax=float(zggz[i].wages_payable*0.2);}
+	if(zggz[i].wages_payable>20000 && zggz[i].wages_payable<=40000)
+	{zggz[i].tax=float(zggz[i].wages_payable*0.25);}
+	if(zggz[i].wages_payable>40000 && zggz[i].wages_payable<=60000)
+	{zggz[i].tax=float(zggz[i].wages_payable*0.3);}
+	if(zggz[i].wages_payable>60000 && zggz[i].wages_payable<=80000)
+	{zggz[i].tax=float(zggz[i].wages_payable*0.35);}
+	if(zggz[i].wages_payable>80000 && zggz[i].wages_payable<=100000)
+	{zggz[i].tax=float(zggz[i].wages_payable*0.4);}
+	if(zggz[i].wages_payable>100000)
+	{zggz[i].tax=float(zggz[i].wages_payable*0.45);}
+		}
 	}
+	fclose(fp);
 }
 void add(struct worker zggz[])//添加职工工资数据函数
 {
@@ -226,7 +246,7 @@ void add(struct worker zggz[])//添加职工工资数据函数
 		scanf("%f\t",&zggz[i].post_allowance);
 		scanf("%f\t",&zggz[i].performance_salary);
 		scanf("%f\t",&zggz[i].wages_payable);
-		scanf("%f\t",&zggz[i].personal_income_tax);
+		scanf("%f\t",&zggz[i].tax);
 		scanf("%f\t",&zggz[i].real_salary);
 		//newemp.wage3=newemp.wage1+newemp.wage2+newemp.funds-newemp.WATERfee-newemp.TAXfee;//获取一个新的职工记录 
 		fwrite(&zggz,sizeof(struct worker),1,fp);
@@ -245,7 +265,7 @@ void del(struct worker zggz[])//删除职工工资数据函数
 	}
 	printf("要删除的工号");
 	scanf("%c",gonghao);
-	for(i=0;(strcmp(zggz[i].workernumber,gonghao)!=0&&i<n);i++)
+	for(i=0;(strcmp(&zggz[i].workernumber,gonghao)!=0&&i<n);i++)
 		if(i>=n)
 		{
 			printf("\t没有%c工号的职工\n",gonghao);
@@ -272,7 +292,7 @@ void del(struct worker zggz[])//删除职工工资数据函数
 	     	    printf("%f\t",zggz[i].post_allowance);
 	    	    printf("%f\t",zggz[i].performance_salary);
 	    	    printf("%f\t",zggz[i].wages_payable);
-	    	    printf("%f\t",zggz[i].personal_income_tax);
+	    	    printf("%f\t",zggz[i].tax);
 	    	    printf("%f\t",zggz[i].real_salary);
 			}
 			fclose(fp);
