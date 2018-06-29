@@ -2,9 +2,8 @@
 #include<stdlib.h>//定义复杂函数及内存分配函数
 #include<conio.h>//控制台输入输出
 #include<string.h>//字符串处理
-#include<windows.h>//调用fwrite等函数
 #define NUM 50//宏定义
-struct worker
+typedef struct worker
 {
 	char workernumber;//职工工号
 	char name[20];//职工姓名
@@ -160,44 +159,81 @@ void list(struct worker zggz[],int n)//浏览职工工资数据函数
 }
 void modify(struct worker zggz[],int n)//修改职工工资数据函数
 {
-	int flag=0;//标记是否被修改
+	void grsds(struct worker zggz[],int n);
 	char gonghao[10];
+	struct worker z;
+	FILE *fp;
+	int i;
+	if((fp=fopen("gx.dat","rb+"))=NULL)
+	{
+		printf("不能打开文件\n");
+		exit(1);
+	}
 	printf("请输入要修改的职工的工号：");
 	scanf("%c",&gonghao);
-	for(int i=0;i<n;i++)
+	for(i=0;fread(&zggz[i],sizeof(struct worker),1,fp);i++)
 	{
-		if(strcmp(&zggz[i].workernumber,gonghao)==0)
-		{
-			if(&zggz[i].workernumber==gonghao)
+		if(!strcmp(&zggz[i].workernumber,gonghao))
+		{break;}
+		if(feof(fp))
 			{
-				printf("修改前后的信息不能一样！\n");
-				break;
+				printf("\t没有%c职工号的职工\n",gonghao);
+				exit(2);
 			}
-			zggz[i].workernumber=gonghao;
-			flag=1;
+		printf("修改前：\n");
+		printf("工号\t姓名\t岗位工资\t薪级工资\t职务津贴\t绩效工资\t应发工资\t个人所得税\t实发工资\n");
+		printf("%c\t",zggz[i].workernumber);
+		printf("%c\t",zggz[i].name);
+		printf("%f\t",zggz[i].post_salary);
+		printf("%f\t",zggz[i].pay_wages);
+		printf("%f\t",zggz[i].post_allowance);
+		printf("%f\t",zggz[i].performance_salary);
+		printf("%f\t",zggz[i].wages_payable);
+		printf("%f\t",zggz[i].tax);
+		printf("%f\t",zggz[i].real_salary);
+		if(!strcmp(gonghao,&zggz[i].workernumber)||!strcmp(gonghao,&zggz[i].workernumber))
+		{
+			printf("请输入修改后的：\n");
+			printf("工号\t姓名\t岗位工资\t薪级工资\t职务津贴\t绩效工资\t应发工资\t个人所得税\t实发工资\n");
+			scanf("%c\t",&zggz[i].workernumber);
+	    	scanf("%c\t",&zggz[i].name);
+		    scanf("%f\t",&zggz[i].post_salary);
+	    	scanf("%f\t",&zggz[i].pay_wages);
+		    scanf("%f\t",&zggz[i].post_allowance);
+	    	scanf("%f\t",&zggz[i].performance_salary);
+			zggz[i].wages_payable=zggz[i].post_salary +zggz[i].pay_wages+zggz[i].post_allowance +zggz[i].performance_salary ;
+		//	zggz[i].tax=grsds(zggz,n);
+		//	zggz[i].real_salary =zggz[i].wages_payable -zggz[i].tax ;
+			fseek(fp,-(long)sizeof(struct worker),SEEK_CUR);//文件指针指向该修改记录的开头
+			fwrite(&z,sizeof(struct worker),1,fp);//用z覆盖当前记录
+			printf("修改后:\n");
+			fseek(fp,0,SEEK_SET);//显示修改后的数据
+			for(i=0;fread(&zggz[i],sizeof(struct worker),1,fp)!=0;i++)
+			{
+				printf("工号\t姓名\t岗位工资\t薪级工资\t职务津贴\t绩效工资\t应发工资\t个人所得税\t实发工资\n");
+		        printf("%c\t",zggz[i].workernumber);
+	        	printf("%c\t",zggz[i].name);
+	        	printf("%f\t",zggz[i].post_salary);
+		        printf("%f\t",zggz[i].pay_wages);
+	        	printf("%f\t",zggz[i].post_allowance);
+	        	printf("%f\t",zggz[i].performance_salary);
+	        	printf("%f\t",zggz[i].wages_payable);
+	        	printf("%f\t",zggz[i].tax);
+		        printf("%f\t",zggz[i].real_salary);
+			}
+			fclose(fp);
 		}
-	}
-	if(flag==0)
-	{
-		printf("修改信息失败\n");
-	}
-	else
-	{
-		printf("修改信息成功\n");
-		writeFile(zggz,n);
-		system("pause");
-		break;
 	}
 }
 void grsds(struct worker zggz[],int n)//计算个人所得税函数
 {  
 	FILE *fp;
-	if((fp=fopen("gz.dat","a+"))==NULL)
+	if((fp=fopen("gx.dat","a+"))==NULL)//为读\写打开文件gx
 	{
 		printf("打开文件失败");
 		exit(0);
 	}
-	while(!feof(fp))
+	while(!feof(fp))//当fp文件指针没有到达文件尾
 	{
 		for(int i=0;i<n;i++)
 		{
@@ -225,18 +261,18 @@ void grsds(struct worker zggz[],int n)//计算个人所得税函数
 	}
 	fclose(fp);
 }
-void add(struct worker zggz[])//添加职工工资数据函数
+void add(struct worker zggz[],int n)//添加职工工资数据函数
 {
 	FILE *fp;
-	int n,i,j;
-	if((fp=fopen("emp.txt","ab+"))==NULL)
+	int i,j;
+	if((fp=fopen("gx.dat","a+"))==NULL)
 	{
-		printf("不能打开emp文件\n");
+		printf("不能打开gx文件\n");
 		exit(0);
 	} 
 	printf("要添加的职工工资人数:");
-	scanf("%d",&n); 
-	for(i=0;i<n;i++)
+	scanf("%d",&j); 
+	for(i=0;i<j;i++)
 	{
 		printf("工号\t姓名\t岗位工资\t薪级工资\t职务津贴\t绩效工资\t应发工资\t个人所得税\t实发工资\n");
 		scanf("%c\t",&zggz[i].workernumber);
@@ -244,11 +280,11 @@ void add(struct worker zggz[])//添加职工工资数据函数
 		scanf("%f\t",&zggz[i].post_salary);
 		scanf("%f\t",&zggz[i].pay_wages);
 		scanf("%f\t",&zggz[i].post_allowance);
-		scanf("%f\t",&zggz[i].performance_salary);
-		scanf("%f\t",&zggz[i].wages_payable);
-		scanf("%f\t",&zggz[i].tax);
-		scanf("%f\t",&zggz[i].real_salary);
+		zggz[i].wages_payable=zggz[i].post_salary +zggz[i].pay_wages+zggz[i].post_allowance +zggz[i].performance_salary;
+//		zggz[i].tax=grsds(zggz,n);
+	//	zggz[i].real_salary =zggz[i].wages_payable -zggz[i].tax ;
 		//newemp.wage3=newemp.wage1+newemp.wage2+newemp.funds-newemp.WATERfee-newemp.TAXfee;//获取一个新的职工记录 
+		n++;
 		fwrite(&zggz,sizeof(struct worker),1,fp);
 	} 
 	fclose(fp); 
@@ -258,14 +294,15 @@ void del(struct worker zggz[])//删除职工工资数据函数
 	FILE *fp;
 	int i,j,n;
 	char gonghao[20];
-	if((fp=fopen("gx","rb"))==NULL)
+	if((fp=fopen("gx.dat","rb"))==NULL)
 	{
 		printf("不能打开gx文件\n");
 		exit(1);
 	}
-	printf("要删除的工号");
-	scanf("%c",gonghao);
+	printf("要删除的工号:");
+	scanf("%c",&gonghao);
 	for(i=0;(strcmp(&zggz[i].workernumber,gonghao)!=0&&i<n);i++)
+	{
 		if(i>=n)
 		{
 			printf("\t没有%c工号的职工\n",gonghao);
@@ -278,9 +315,9 @@ void del(struct worker zggz[])//删除职工工资数据函数
 			fclose(fp);
 			exit(3);
 		}
-		for(j=0;j<i;j++)
+		for(j=i+1;j<n;j++)
 		{
-			fwrite(&zggz[j],sizeof(strcmp worker),1,fp);
+			fwrite(&zggz[j],sizeof(struct worker),1,fp);
 			fseek(fp,0,SEEK_SET);
 			printf("工号\t姓名\t岗位工资\t薪级工资\t职务津贴\t绩效工资\t应发工资\t个人所得税\t实发工资\n");
 			for(i=0;fread(&zggz[i],sizeof(struct worker),1,fp);i++)
@@ -298,59 +335,53 @@ void del(struct worker zggz[])//删除职工工资数据函数
 			fclose(fp);
 		}
 }
-int main()
+void  main()
 {  
-	struct worker zggz[50];
+    struct worker z[50];
 	int choose;//选择按钮
-	read(struct worker zggz[]);
-	write(struct worker zggz[],int n);
-	find(struct worker zggz[],int n);
-	list(struct worker zggz[],int n);
-	modify(struct worker zggz[],int n);
-	del(struct worker zggz[],int n);
-	add(struct worker zggz[],int n);
-	grsds(struct worker zggz[]);
-	n=readfile(zggz);//调用读入函数
-	puts("\n");
-	puts("    工资管理系统    ");
-	puts("/n");
+	int n=0;
+	int w;
+	count=read(z);//调用读入函数
 	//do_while循环实现循环此功能
 	do
 	{
-		printf("/n");
+		printf("\n");
 		system("pause");
 		system("cls");//清屏
-		puts("    功能选择菜单    ");
-		puts("/n");
-		puts("    1、查询员工信息    ");
-		puts("    2、浏览员工信息    ");
-		puts("    3、修改员工信息    ");
-		puts("    4、添加员工信息    ");
-		puts("    5、删除员工信息    ");
-		puts("    6、保存员工信息    ");
-		puts("    7、退出程序    ");
-		printf("/n");
-		printf("请输入你的选择：");
+		puts("### 欢迎使用广西民族大学软件与信息安全学院职工工资管理系统 ###\n");
+	    puts("\n");
+        puts("请选择<1-7>\n");
+        puts("==============================================================\n");
+        puts("          1.查询职工工资记录                                  \n");
+        puts("          2.修改职工工资记录                                  \n");
+	    puts("          3.添加职工工资记录                                  \n");
+	    puts("          4.删除职工工资记录                                  \n");
+	    puts("          5.保存数据到文件                                    \n");
+	    puts("          6.浏览职工记录                                      \n");
+	    puts("          7.退出系统                                          \n");
+        puts("==============================================================\n");
+	    printf("\n");
+        printf("你的选择是：\n");
 		scanf("%d",&choose);
 		switch(choose)
 		{
 		case 1:
-			find(zggz);
+			find(z,n);
 			break;
 		case 2:
-			list(zggz);
+			modify(z,n);
 			break;
 		case 3:
-			modify(zggz);
+			add(z,n);
 			break;
 		case 4:
-			add(zggz);
+			del(z);
 			break;
 		case 5:
-			del(zggz);
+			write(z,n);
 			break;
 		case 6:
-			write(zggz);
+			list(z,n);
 			break;
 		case 7:
 			puts("\n谢谢使用/n");
@@ -363,6 +394,7 @@ int main()
 
 	}
 	while(choose!=-1);
+
 	return 0;
 
 }
